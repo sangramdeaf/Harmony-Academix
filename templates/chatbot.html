@@ -1,0 +1,127 @@
+{% extends "base.html" %}
+
+{% block title %}AI Chat Support - Harmony Hands{% endblock %}
+
+{% block content %}
+<div class="container">
+    <div class="row justify-content-center">
+        <div class="col-md-10">
+            <div class="card shadow">
+                <div class="card-header bg-info text-white text-center">
+                    <h3 class="mb-0">
+                        <i class="fas fa-robot me-2"></i>
+                        AI चॅट सपोर्ट / AI Chat Support
+                    </h3>
+                    <p class="mb-0 mt-2">Mistral AI द्वारे समर्थित / Powered by Mistral AI</p>
+                </div>
+                <div class="card-body">
+                    {% with messages = get_flashed_messages(with_categories=true) %}
+                        {% if messages %}
+                            {% for category, message in messages %}
+                                <div class="alert alert-{{ 'danger' if category == 'error' else 'success' }} alert-dismissible fade show" role="alert">
+                                    {{ message }}
+                                    <button type="button" class="btn-close" data-bs-dismiss="alert"></button>
+                                </div>
+                            {% endfor %}
+                        {% endif %}
+                    {% endwith %}
+
+                    <!-- API Key Setup -->
+                    {% if not session.get('hf_api_key') %}
+                    <div class="alert alert-warning">
+                        <h5><i class="fas fa-key me-2"></i>API Key आवश्यक / API Key Required</h5>
+                        <p>चॅटबॉट वापरण्यासाठी तुमची Hugging Face API Key प्रविष्ट करा:</p>
+                        <p>To use the chatbot, please enter your Hugging Face API Key:</p>
+                        <ol>
+                            <li>Visit <a href="https://huggingface.co/settings/tokens" target="_blank">Hugging Face Tokens</a></li>
+                            <li>Create a new token with "Read" access</li>
+                            <li>Copy and paste it below</li>
+                        </ol>
+                    </div>
+
+                    <form method="POST" class="mb-4">
+                        <div class="input-group">
+                            <input type="text" class="form-control" name="api_key" placeholder="hf_xxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxx" required>
+                            <button class="btn btn-primary" type="submit" name="action" value="set_api_key">
+                                <i class="fas fa-save me-2"></i>API Key सेट करा / Set API Key
+                            </button>
+                        </div>
+                    </form>
+                    {% endif %}
+
+                    <!-- Chat Interface -->
+                    {% if session.get('hf_api_key') %}
+                    <div class="d-flex justify-content-between align-items-center mb-3">
+                        <span class="badge bg-success">API Key सेट केली आहे / API Key Set</span>
+                        <form method="POST" class="d-inline">
+                            <button class="btn btn-sm btn-outline-danger" type="submit" name="action" value="clear_api_key">
+                                <i class="fas fa-trash me-1"></i>Clear API Key
+                            </button>
+                        </form>
+                    </div>
+
+                    <!-- Chat History -->
+                    <div id="chatHistory" class="chat-history mb-4" style="height: 400px; overflow-y: auto; border: 1px solid #ddd; padding: 15px; border-radius: 8px; background-color: #f8f9fa;">
+                        {% if session.get('chat_history') %}
+                            {% for chat in session['chat_history'] %}
+                                <div class="chat-message mb-3">
+                                    <div class="user-message bg-primary text-white p-2 rounded mb-2">
+                                        <strong>तुम्ही / You:</strong> {{ chat.user }}
+                                    </div>
+                                    <div class="ai-message bg-light p-2 rounded">
+                                        <strong>AI सहाय्यक / AI Assistant:</strong> {{ chat.ai }}
+                                    </div>
+                                </div>
+                            {% endfor %}
+                        {% else %}
+                            <div class="text-center text-muted">
+                                <i class="fas fa-comment-dots fa-3x mb-3"></i>
+                                <p>आपले संवाद येथे दिसतील / Your conversations will appear here</p>
+                            </div>
+                        {% endif %}
+                    </div>
+
+                    <!-- Chat Form -->
+                    <form method="POST">
+                        <div class="input-group">
+                            <textarea class="form-control" name="message" rows="2" placeholder="आपला प्रश्न येथे लिहा... / Type your question here..." required></textarea>
+                            <button class="btn btn-info" type="submit" name="action" value="send_message">
+                                <i class="fas fa-paper-plane me-2"></i>पाठवा / Send
+                            </button>
+                        </div>
+                        <div class="form-text">
+                            सुचना: शिक्षण, प्रवेश प्रक्रिया, फॉर्म भरणे इत्यादी विषयांवर प्रश्न विचारा<br>
+                            Tip: Ask questions about education, admission process, form filling, etc.
+                        </div>
+                    </form>
+
+                    <!-- Clear Chat -->
+                    {% if session.get('chat_history') %}
+                    <div class="text-center mt-3">
+                        <form method="POST" class="d-inline">
+                            <button class="btn btn-outline-secondary" type="submit" name="action" value="clear_chat">
+                                <i class="fas fa-broom me-2"></i>चॅट साफ करा / Clear Chat
+                            </button>
+                        </form>
+                    </div>
+                    {% endif %}
+                    {% endif %}
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+
+<script>
+// Auto-scroll to bottom of chat
+function scrollToBottom() {
+    const chatHistory = document.getElementById('chatHistory');
+    if (chatHistory) {
+        chatHistory.scrollTop = chatHistory.scrollHeight;
+    }
+}
+
+// Scroll to bottom on page load
+document.addEventListener('DOMContentLoaded', scrollToBottom);
+</script>
+{% endblock %}

@@ -1,6 +1,6 @@
 {% extends "base.html" %}
 
-{% block title %}Pratinidhan Form - Harmony Hands{% endblock %}
+{% block title %}Pratinidhan Certificate - Harmony Hands{% endblock %}
 
 {% block content %}
 <div class="container">
@@ -10,73 +10,142 @@
                 <div class="card-header bg-danger text-white text-center">
                     <h3 class="mb-0">
                         <i class="fas fa-id-card me-2"></i>
-                        प्रतिनिधान प्रमाणपत्र फॉर्म / Pratinidhan Certificate Form
+                        प्रतिनिधान प्रमाणपत्र / Pratinidhan Certificate
                     </h3>
                 </div>
                 <div class="card-body">
-                    <p class="text-muted mb-4">शाळेचे नाव: संग्राम मुकबधीर विद्यालय</p>
-                    
+                    {% with messages = get_flashed_messages(with_categories=true) %}
+                        {% if messages %}
+                            {% for category, message in messages %}
+                                <div class="alert alert-{{ 'danger' if category == 'error' else 'success' }} alert-dismissible fade show" role="alert">
+                                    {{ message }}
+                                    <button type="button" class="btn-close" data-bs-dismiss="alert"></button>
+                                </div>
+                            {% endfor %}
+                        {% endif %}
+                    {% endwith %}
+
                     <form id="pratinidhanForm" method="POST">
-                        <div class="mb-3">
-                            <label for="student_name" class="form-label">विद्यार्थ्याचे पूर्ण नाव / Student's Full Name</label>
-                            <input type="text" class="form-control" id="student_name" name="student_name" required>
-                        </div>
+                        {{ form.hidden_tag() }}
                         
-                        <div class="mb-3">
-                            <label for="academic_year" class="form-label">शैक्षणिक वर्ष / Academic Year</label>
-                            <input type="text" class="form-control" id="academic_year" name="academic_year" placeholder="उदा: 2024-25" required>
-                        </div>
-                        
-                        <div class="row mb-3">
-                            <div class="col-md-6">
-                                <label for="class_standard" class="form-label">इयत्ता / Class</label>
-                                <input type="text" class="form-control" id="class_standard" name="class_standard" placeholder="उदा: 10वी" required>
+                        <div class="row">
+                            <div class="col-md-6 mb-3">
+                                {{ form.student_name.label(class="form-label") }}
+                                {{ form.student_name(class="form-control", required=True) }}
+                                {% if form.student_name.errors %}
+                                    <div class="text-danger">
+                                        {% for error in form.student_name.errors %}
+                                            <small>{{ error }}</small>
+                                        {% endfor %}
+                                    </div>
+                                {% endif %}
                             </div>
-                            <div class="col-md-6">
-                                <label for="division" class="form-label">तुकडी / Division</label>
-                                <input type="text" class="form-control" id="division" name="division" placeholder="उदा: अ" required>
+                            
+                            <div class="col-md-6 mb-3">
+                                {{ form.academic_year.label(class="form-label") }}
+                                {{ form.academic_year(class="form-control", placeholder="2024-25", required=True) }}
+                                {% if form.academic_year.errors %}
+                                    <div class="text-danger">
+                                        {% for error in form.academic_year.errors %}
+                                            <small>{{ error }}</small>
+                                        {% endfor %}
+                                    </div>
+                                {% endif %}
                             </div>
-                        </div>
-                        
-                        <div class="row mb-3">
-                            <div class="col-md-6">
-                                <label for="conduct" class="form-label">वर्तन / Conduct</label>
-                                <input type="text" class="form-control" id="conduct" name="conduct" placeholder="उदा: चांगले" required>
+                            
+                            <div class="col-md-6 mb-3">
+                                {{ form.class_standard.label(class="form-label") }}
+                                {{ form.class_standard(class="form-control", placeholder="10th", required=True) }}
+                                {% if form.class_standard.errors %}
+                                    <div class="text-danger">
+                                        {% for error in form.class_standard.errors %}
+                                            <small>{{ error }}</small>
+                                        {% endfor %}
+                                    </div>
+                                {% endif %}
                             </div>
-                            <div class="col-md-6">
-                                <label for="caste" class="form-label">जात / Caste</label>
-                                <input type="text" class="form-control" id="caste" name="caste" required>
+                            
+                            <div class="col-md-6 mb-3">
+                                {{ form.division.label(class="form-label") }}
+                                {{ form.division(class="form-control", placeholder="A", required=True) }}
+                                {% if form.division.errors %}
+                                    <div class="text-danger">
+                                        {% for error in form.division.errors %}
+                                            <small>{{ error }}</small>
+                                        {% endfor %}
+                                    </div>
+                                {% endif %}
                             </div>
-                        </div>
-                        
-                        <div class="row mb-3">
-                            <div class="col-md-6">
-                                <label for="birth_date" class="form-label">जन्मतारीख / Date of Birth</label>
-                                <input type="date" class="form-control" id="birth_date" name="birth_date" required>
+                            
+                            <div class="col-md-6 mb-3">
+                                {{ form.conduct.label(class="form-label") }}
+                                {{ form.conduct(class="form-control", placeholder="उत्तम / Excellent", required=True) }}
+                                {% if form.conduct.errors %}
+                                    <div class="text-danger">
+                                        {% for error in form.conduct.errors %}
+                                            <small>{{ error }}</small>
+                                        {% endfor %}
+                                    </div>
+                                {% endif %}
                             </div>
-                            <div class="col-md-6">
-                                <label for="birth_place" class="form-label">जन्मस्थान / Place of Birth</label>
-                                <input type="text" class="form-control" id="birth_place" name="birth_place" required>
+                            
+                            <div class="col-md-6 mb-3">
+                                {{ form.caste.label(class="form-label") }}
+                                {{ form.caste(class="form-control", required=True) }}
+                                {% if form.caste.errors %}
+                                    <div class="text-danger">
+                                        {% for error in form.caste.errors %}
+                                            <small>{{ error }}</small>
+                                        {% endfor %}
+                                    </div>
+                                {% endif %}
                             </div>
-                        </div>
-                        
-                        <div class="mb-3">
-                            <label for="school_place" class="form-label">शाळेचे स्थळ / School Location</label>
-                            <input type="text" class="form-control" id="school_place" name="school_place" required>
-                        </div>
-                        
-                        <div class="alert alert-info">
-                            <i class="fas fa-info-circle me-2"></i>
-                            <strong>टीप / Note:</strong> सर्व माहिती भरल्यानंतर प्रतिनिधान प्रमाणपत्र तयार होईल. / After filling all information, the representative certificate will be generated.
+                            
+                            <div class="col-md-6 mb-3">
+                                {{ form.birth_date.label(class="form-label") }}
+                                {{ form.birth_date(class="form-control", required=True) }}
+                                {% if form.birth_date.errors %}
+                                    <div class="text-danger">
+                                        {% for error in form.birth_date.errors %}
+                                            <small>{{ error }}</small>
+                                        {% endfor %}
+                                    </div>
+                                {% endif %}
+                            </div>
+                            
+                            <div class="col-md-6 mb-3">
+                                {{ form.birth_place.label(class="form-label") }}
+                                {{ form.birth_place(class="form-control", required=True) }}
+                                {% if form.birth_place.errors %}
+                                    <div class="text-danger">
+                                        {% for error in form.birth_place.errors %}
+                                            <small>{{ error }}</small>
+                                        {% endfor %}
+                                    </div>
+                                {% endif %}
+                            </div>
+                            
+                            <div class="col-12 mb-3">
+                                {{ form.school_place.label(class="form-label") }}
+                                {{ form.school_place(class="form-control", required=True) }}
+                                {% if form.school_place.errors %}
+                                    <div class="text-danger">
+                                        {% for error in form.school_place.errors %}
+                                            <small>{{ error }}</small>
+                                        {% endfor %}
+                                    </div>
+                                {% endif %}
+                            </div>
                         </div>
                         
                         <div class="text-center">
-                            <button type="button" class="btn btn-secondary btn-lg me-3" onclick="HarmonyHands.saveFormAsPDF('pratinidhanForm', 'प्रतिनिधान_प्रमाणपत्र_Pratinidhan_Certificate')">
-                                <i class="fas fa-file-pdf me-2"></i>PDF म्हणून जतन करा / Save as PDF
+                            <button type="button" id="savePdfBtn" class="btn btn-info btn-lg me-3">
+                                <i class="fas fa-file-pdf me-2"></i>Save as PDF
                             </button>
-                            <button type="submit" class="btn btn-danger btn-lg">
-                                <i class="fas fa-certificate me-2"></i>प्रमाणपत्र तयार करा / Generate Certificate
-                            </button>
+                            {{ form.submit(class="btn btn-danger btn-lg") }}
+                            <a href="{{ url_for('student_dashboard') }}" class="btn btn-secondary btn-lg ms-2">
+                                <i class="fas fa-arrow-left me-2"></i>परत / Back
+                            </a>
                         </div>
                     </form>
                 </div>
@@ -84,4 +153,51 @@
         </div>
     </div>
 </div>
+
+<script src="https://cdnjs.cloudflare.com/ajax/libs/jspdf/2.5.1/jspdf.umd.min.js"></script>
+<script>
+document.getElementById('savePdfBtn').addEventListener('click', function() {
+    const { jsPDF } = window.jspdf;
+    const doc = new jsPDF();
+    
+    // Add content to PDF
+    doc.setFontSize(20);
+    doc.text('प्रतिनिधान प्रमाणपत्र / Pratinidhan Certificate', 20, 30);
+    
+    doc.setFontSize(12);
+    let y = 60;
+    
+    // Get form values
+    const studentName = document.querySelector('input[name="student_name"]').value;
+    const academicYear = document.querySelector('input[name="academic_year"]').value;
+    const classStd = document.querySelector('input[name="class_standard"]').value;
+    const division = document.querySelector('input[name="division"]').value;
+    const conduct = document.querySelector('input[name="conduct"]').value;
+    const caste = document.querySelector('input[name="caste"]').value;
+    const birthDate = document.querySelector('input[name="birth_date"]').value;
+    const birthPlace = document.querySelector('input[name="birth_place"]').value;
+    const schoolPlace = document.querySelector('input[name="school_place"]').value;
+    
+    doc.text(`Student Name / विद्यार्थ्याचे नाव: ${studentName}`, 20, y);
+    y += 15;
+    doc.text(`Academic Year / शैक्षणिक वर्ष: ${academicYear}`, 20, y);
+    y += 15;
+    doc.text(`Class / इयत्ता: ${classStd}`, 20, y);
+    y += 15;
+    doc.text(`Division / तुकडी: ${division}`, 20, y);
+    y += 15;
+    doc.text(`Conduct / वर्तन: ${conduct}`, 20, y);
+    y += 15;
+    doc.text(`Caste / जात: ${caste}`, 20, y);
+    y += 15;
+    doc.text(`Date of Birth / जन्मतारीख: ${birthDate}`, 20, y);
+    y += 15;
+    doc.text(`Place of Birth / जन्मस्थान: ${birthPlace}`, 20, y);
+    y += 15;
+    doc.text(`School Location / शाळेचे स्थळ: ${schoolPlace}`, 20, y);
+    
+    // Save the PDF
+    doc.save(`pratinidhan_certificate_${studentName || 'form'}.pdf`);
+});
+</script>
 {% endblock %}

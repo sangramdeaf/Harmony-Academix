@@ -10,9 +10,13 @@ class User(UserMixin, db.Model):
     email = db.Column(db.String(120), unique=True, nullable=False)
     password_hash = db.Column(db.String(256), nullable=False)
     full_name = db.Column(db.String(100), nullable=False)
-    student_id = db.Column(db.String(10), unique=True, nullable=True)  # STU001-STU300
+    student_id = db.Column(db.String(10), unique=True, nullable=True)  # STU001-STU900
     is_admin = db.Column(db.Boolean, default=False)
     created_at = db.Column(db.DateTime, default=datetime.utcnow)
+    profile_photo = db.Column(db.String(200), nullable=True)
+    phone_number = db.Column(db.String(15), nullable=True)
+    address = db.Column(db.Text, nullable=True)
+    date_of_birth = db.Column(db.Date, nullable=True)
     
     # Relationships
     admission_forms = db.relationship('AdmissionForm', backref='student', lazy=True)

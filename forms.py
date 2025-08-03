@@ -74,3 +74,29 @@ class BonafideFormForm(FlaskForm):
     birth_place = StringField('जन्मस्थान', validators=[DataRequired()])
     school_place = StringField('शाळेचे स्थळ', validators=[DataRequired()])
     submit = SubmitField('दाखला तयार करा')
+
+class PratinidhanFormForm(FlaskForm):
+    student_name = StringField('विद्यार्थ्याचे पूर्ण नाव / Student Name', validators=[DataRequired()])
+    academic_year = StringField('शैक्षणिक वर्ष / Academic Year', validators=[DataRequired()])
+    class_standard = StringField('इयत्ता / Class', validators=[DataRequired()])
+    division = StringField('तुकडी / Division', validators=[DataRequired()])
+    conduct = StringField('वर्तन / Conduct', validators=[DataRequired()])
+    caste = StringField('जात / Caste', validators=[DataRequired()])
+    birth_date = DateField('जन्मतारीख / Date of Birth', validators=[DataRequired()])
+    birth_place = StringField('जन्मस्थान / Place of Birth', validators=[DataRequired()])
+    school_place = StringField('शाळेचे स्थळ / School Location', validators=[DataRequired()])
+    submit = SubmitField('प्रमाणपत्र तयार करा / Generate Certificate')
+
+class ProfileForm(FlaskForm):
+    full_name = StringField('पूर्ण नाव / Full Name', validators=[Optional()])
+    email = StringField('ईमेल / Email', validators=[Optional(), Email()])
+    phone_number = StringField('फोन नंबर / Phone Number', validators=[Optional()])
+    address = TextAreaField('पत्ता / Address', validators=[Optional()])
+    date_of_birth = DateField('जन्मतारीख / Date of Birth', validators=[Optional()])
+    profile_photo = FileField('प्रोफाइल फोटो / Profile Photo', validators=[FileAllowed(['jpg', 'png', 'jpeg'], 'Images only!')])
+    submit = SubmitField('प्रोफाइल अपडेट करा / Update Profile')
+
+class ChatForm(FlaskForm):
+    api_key = StringField('Hugging Face API Key', validators=[DataRequired()], render_kw={'placeholder': 'Enter your Hugging Face API key'})
+    message = TextAreaField('संदेश / Message', validators=[DataRequired()], render_kw={'placeholder': 'आपला प्रश्न येथे लिहा / Type your question here'})
+    submit = SubmitField('पाठवा / Send')

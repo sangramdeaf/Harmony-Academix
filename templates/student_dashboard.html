@@ -86,6 +86,29 @@
             <h4 class="mb-3">त्वरित क्रिया / Quick Actions</h4>
         </div>
         
+        <!-- Profile and AI Chat -->
+        <div class="col-md-6 col-lg-4 mb-3">
+            <div class="card h-100 border-primary">
+                <div class="card-body text-center">
+                    <i class="fas fa-user-circle fa-3x text-primary mb-3"></i>
+                    <h5 class="card-title">प्रोफाइल</h5>
+                    <p class="card-text">आपली व्यक्तिगत माहिती अपडेट करा</p>
+                    <a href="{{ url_for('profile') }}" class="btn btn-primary">प्रोफाइल पहा</a>
+                </div>
+            </div>
+        </div>
+        
+        <div class="col-md-6 col-lg-4 mb-3">
+            <div class="card h-100 border-info">
+                <div class="card-body text-center">
+                    <i class="fas fa-robot fa-3x text-info mb-3"></i>
+                    <h5 class="card-title">AI चॅट सपोर्ट</h5>
+                    <p class="card-text">Mistral AI साह सहाय्य मिळवा</p>
+                    <a href="{{ url_for('chatbot') }}" class="btn btn-info">चॅट सुरू करा</a>
+                </div>
+            </div>
+        </div>
+        
         <div class="col-md-6 col-lg-4 mb-3">
             <div class="card h-100">
                 <div class="card-body text-center">

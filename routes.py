@@ -1,13 +1,15 @@
 import os
+import requests
+import json
 from datetime import datetime
-from flask import render_template, redirect, url_for, flash, request, current_app, send_from_directory
+from flask import render_template, redirect, url_for, flash, request, current_app, send_from_directory, session
 from flask_login import login_user, logout_user, login_required, current_user
 from werkzeug.utils import secure_filename
 from sqlalchemy import func
 
 from app import app, db
 from models import User, AdmissionForm, BonafideForm, HostelForm, CaseRecord, PratinidhanForm
-from forms import LoginForm, RegistrationForm, AdmissionFormForm, BonafideFormForm
+from forms import LoginForm, RegistrationForm, AdmissionFormForm, BonafideFormForm, ProfileForm, ChatForm, PratinidhanFormForm
 
 def allowed_file(filename):
     return '.' in filename and \
@@ -454,3 +456,131 @@ def update_form_status(form_type, form_id):
         flash('अवैध स्थिती / Invalid status', 'danger')
     
     return redirect(url_for('admin_forms', form_type=form_type))
+
+@app.route('/profile', methods=['GET', 'POST'])
+@login_required
+def profile():
+    form = ProfileForm()
+    if form.validate_on_submit():
+        # Handle profile photo upload
+        if form.profile_photo.data:
+            photo_file = save_file(form.profile_photo.data)
+            if photo_file:
+                # Remove old profile photo if exists
+                if current_user.profile_photo:
+                    old_photo_path = os.path.join(current_app.config['UPLOAD_FOLDER'], current_user.profile_photo)
+                    if os.path.exists(old_photo_path):
+                        os.remove(old_photo_path)
+                current_user.profile_photo = photo_file
+        
+        # Update user profile
+        if form.full_name.data:
+            current_user.full_name = form.full_name.data
+        if form.email.data:
+            current_user.email = form.email.data
+        if form.phone_number.data:
+            current_user.phone_number = form.phone_number.data
+        if form.address.data:
+            current_user.address = form.address.data
+        if form.date_of_birth.data:
+            current_user.date_of_birth = form.date_of_birth.data
+        
+        db.session.commit()
+        flash('प्रोफाइल यशस्वीरित्या अपडेट केले आहे! / Profile updated successfully!')
+        return redirect(url_for('profile'))
+    
+    return render_template('profile.html', form=form)
+
+@app.route('/chatbot', methods=['GET', 'POST'])
+@login_required
+def chatbot():
+    if request.method == 'POST':
+        action = request.form.get('action')
+        
+        if action == 'set_api_key':
+            api_key = request.form.get('api_key')
+            if api_key:
+                session['hf_api_key'] = api_key
+                session['chat_history'] = []
+                flash('API Key यशस्वीरित्या सेट केली आहे! / API Key set successfully!', 'success')
+            else:
+                flash('कृपया वैध API Key प्रविष्ट करा / Please enter a valid API Key', 'error')
+        
+        elif action == 'clear_api_key':
+            session.pop('hf_api_key', None)
+            session.pop('chat_history', None)
+            flash('API Key साफ केली आहे / API Key cleared', 'success')
+        
+        elif action == 'clear_chat':
+            session['chat_history'] = []
+            flash('चॅट हिस्ट्री साफ केली आहे / Chat history cleared', 'success')
+        
+        elif action == 'send_message':
+            message = request.form.get('message')
+            if message and session.get('hf_api_key'):
+                try:
+                    # Call Hugging Face API
+                    api_key = session['hf_api_key']
+                    headers = {
+                        'Authorization': f'Bearer {api_key}',
+                        'Content-Type': 'application/json'
+                    }
+                    
+                    # Use Mistral AI model
+                    api_url = "https://api-inference.huggingface.co/models/mistralai/Mistral-7B-Instruct-v0.1"
+                    
+                    # Create context-aware prompt
+                    system_prompt = """You are an AI assistant for Harmony Hands Student ERP System, a bilingual (Marathi/English) educational platform. Help students with:
+- Admission processes and form filling
+- Understanding educational procedures
+- General academic guidance
+- System navigation help
+
+Respond in both Marathi and English when appropriate. Be helpful, concise, and educational-focused."""
+                    
+                    user_message = f"{system_prompt}\n\nUser Question: {message}\n\nResponse:"
+                    
+                    payload = {
+                        "inputs": user_message,
+                        "parameters": {
+                            "max_new_tokens": 250,
+                            "temperature": 0.7,
+                            "return_full_text": False
+                        }
+                    }
+                    
+                    response = requests.post(api_url, headers=headers, json=payload, timeout=30)
+                    
+                    if response.status_code == 200:
+                        result = response.json()
+                        if isinstance(result, list) and len(result) > 0:
+                            ai_response = result[0].get('generated_text', 'Sorry, I could not generate a response.')
+                        else:
+                            ai_response = 'Sorry, I could not generate a response.'
+                        
+                        # Store in chat history
+                        if 'chat_history' not in session:
+                            session['chat_history'] = []
+                        
+                        session['chat_history'].append({
+                            'user': message,
+                            'ai': ai_response
+                        })
+                        
+                        # Keep only last 10 conversations
+                        if len(session['chat_history']) > 10:
+                            session['chat_history'] = session['chat_history'][-10:]
+                        
+                        session.modified = True
+                        
+                    else:
+                        flash(f'API Error: {response.status_code} - {response.text}', 'error')
+                
+                except requests.RequestException as e:
+                    flash(f'Connection Error: {str(e)}', 'error')
+                except Exception as e:
+                    flash(f'Error: {str(e)}', 'error')
+        
+        return redirect(url_for('chatbot'))
+    
+    return render_template('chatbot.html')
