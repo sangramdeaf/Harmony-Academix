@@ -7,85 +7,79 @@ from sqlalchemy.orm import DeclarativeBase
 from werkzeug.middleware.proxy_fix import ProxyFix
 
 # Configure logging
-logging.basicConfig(level=logging.INFO)
+logging.basicConfig(level=logging.DEBUG)
 logger = logging.getLogger(__name__)
 
 class Base(DeclarativeBase):
     pass
 
-# SQLAlchemy with a Declarative Base so models can inherit from Base
 db = SQLAlchemy(model_class=Base)
 
+# Create the app
+app = Flask(__name__)
+app.secret_key = os.environ.get("SESSION_SECRET", "dev-secret-key-change-in-production")
+app.wsgi_app = ProxyFix(app.wsgi_app, x_proto=1, x_host=1)
 
-def create_app():
-    """Factory to create and configure the Flask app."""
-    app = Flask(__name__, static_folder='static', template_folder='templates')
+# Configure the database
+# Render gives DATABASE_URL like `postgres://...` — SQLAlchemy expects `postgresql://`
+database_url = os.environ.get("DATABASE_URL", "sqlite:///harmony_hands.db")
+if database_url.startswith("postgres://"):
+    database_url = database_url.replace("postgres://", "postgresql://", 1)
 
-    # Secret (use an env var in production; fallback is intentionally development-only)
-    app.secret_key = os.environ.get("SESSION_SECRET", "dev-secret-key-change-in-production")
+app.config["SQLALCHEMY_DATABASE_URI"] = database_url
+app.config["SQLALCHEMY_ENGINE_OPTIONS"] = {
+    "pool_recycle": 300,
+    "pool_pre_ping": True,
+}
+app.config["SQLALCHEMY_TRACK_MODIFICATIONS"] = False
 
-    # If the app is behind a proxy (Render, nginx, etc.) ProxyFix helps Flask
-    app.wsgi_app = ProxyFix(app.wsgi_app, x_proto=1, x_host=1)
+# Configure file uploads
+app.config['MAX_CONTENT_LENGTH'] = 16 * 1024 * 1024  # 16MB max file size
+app.config['UPLOAD_FOLDER'] = os.environ.get('UPLOAD_FOLDER', 'uploads')
 
-    # DATABASE_URL compatibility: Render and some providers use postgres:// — SQLAlchemy
-    # prefers postgresql:// with some drivers. Convert automatically if needed.
-    database_url = os.environ.get("DATABASE_URL", "sqlite:///harmony_hands.db")
-    if database_url.startswith("postgres://"):
-        database_url = database_url.replace("postgres://", "postgresql://", 1)
+# Initialize extensions
+db.init_app(app)
+login_manager = LoginManager()
+login_manager.init_app(app)
+# If your login route is defined as @app.route('/login') then keep 'login' here.
+login_manager.login_view = 'login'  # type: ignore
+login_manager.login_message = 'कृपया प्रवेश करा / Please login to access this page.'
 
-    app.config["SQLALCHEMY_DATABASE_URI"] = database_url
-    app.config["SQLALCHEMY_ENGINE_OPTIONS"] = {
-        "pool_recycle": 300,
-        "pool_pre_ping": True,
-    }
-    app.config["SQLALCHEMY_TRACK_MODIFICATIONS"] = False
-
-    # File upload settings
-    app.config['MAX_CONTENT_LENGTH'] = 16 * 1024 * 1024  # 16MB
-    app.config['UPLOAD_FOLDER'] = os.environ.get('UPLOAD_FOLDER', 'uploads')
-
-    # Initialize extensions
-    db.init_app(app)
-
-    login_manager = LoginManager()
-    login_manager.init_app(app)
-    login_manager.login_view = 'login'
-    login_manager.login_message = 'कृपया प्रवेश करा / Please login to access this page.'
-
-    @login_manager.user_loader
-    def load_user(user_id):
-        # Import inside function to avoid circular imports
+@login_manager.user_loader
+def load_user(user_id):
+    # Import inside function to avoid circular import problems
+    try:
         from models import User
         return User.query.get(int(user_id))
-
-    # Ensure upload directory exists
-    os.makedirs(app.config['UPLOAD_FOLDER'], exist_ok=True)
-
-    # By default create tables automatically for quick deploys. You can skip this by
-    # setting the SKIP_DB_CREATE env var (1/true/yes).
-    with app.app_context():
-        import models  # noqa: F401 (ensure models are registered)
-        skip_create = os.environ.get('SKIP_DB_CREATE', '').lower() in ('1', 'true', 'yes')
-        if not skip_create:
-            db.create_all()
-            logger.info('Database tables created/ensured')
-        else:
-            logger.info('SKIP_DB_CREATE set — skipping db.create_all()')
-
-    # Import routes after extensions are initialized
-    try:
-        from routes import *  # noqa: E402,F401
     except Exception as e:
-        logger.warning('Could not import routes: %s', e)
+        logger.exception("Error loading user: %s", e)
+        return None
 
-    return app
+# Create upload directory
+os.makedirs(app.config['UPLOAD_FOLDER'], exist_ok=True)
 
+with app.app_context():
+    # Import models to ensure tables are created
+    try:
+        import models  # noqa: F401
+    except Exception as e:
+        logger.warning("Could not import models module: %s", e)
 
-# Create the actual app instance used by WSGI servers (gunicorn) and Flask CLI
-app = create_app()
+    # Optional skip flag if you want to run migrations manually
+    skip_create = os.environ.get('SKIP_DB_CREATE', '').lower() in ('1', 'true', 'yes')
+    if not skip_create:
+        try:
+            db.create_all()
+            logger.info("Database tables created/ensured")
+        except Exception as e:
+            logger.exception("db.create_all() failed: %s", e)
+    else:
+        logger.info("SKIP_DB_CREATE set — skipping db.create_all()")
 
-if __name__ == '__main__':
-    # Local development server
-    port = int(os.environ.get('PORT', 5000))
-    debug_flag = os.environ.get('FLASK_DEBUG', '').lower() in ('1', 'true', 'yes')
-    app.run(host='0.0.0.0', port=port, debug=debug_flag)
+# Import routes at module level safely. Use plain import (not `from routes import *`)
+# If your routes.py uses @app.route directly it will work because `app` is already defined.
+try:
+    import routes  # executes routes and registers routes decorated with @app.route
+    logger.info("routes module imported")
+except Exception as e:
+    logger.exception("Could not import routes: %s", e)
